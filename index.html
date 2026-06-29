@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>我说吃啥就吃啥 V2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============ CSS Variables & Reset ============ */
+:root {
+  --wood-dark: #5c3d2e;
+  --wood-mid: #8b6914;
+  --wood-light: #a0845c;
+  --paper: #f5e6c8;
+  --paper-dark: #e8d5a3;
+  --paper-light: #faf3e3;
+  --ink: #4a3728;
+  --ink-light: #6b5a4a;
+  --accent: #c0392b;
+  --accent-gold: #d4a017;
+  --shadow: rgba(0,0,0,0.15);
+  --radius: 12px;
+  --font-hand: 'ZCOOL KuaiLe', cursive;
+  --font-body: 'Noto Serif SC', serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, #3e2517 0%, #5c3d2e 30%, #4a3020 60%, #3e2517 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--ink);
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(0,0,0,0.05) 30px, rgba(0,0,0,0.05) 31px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============ Floating Texts ============ */
+.floating-text {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  color: var(--paper-light);
+  opacity: 0;
+  animation: floatAcross 6s linear forwards;
+  white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+@keyframes floatAcross {
+  0% { opacity:0; transform: translateX(-100%) translateY(0) rotate(-5deg); }
+  10% { opacity:0.5; }
+  80% { opacity:0.5; }
+  100% { opacity:0; transform: translateX(110vw) translateY(-40px) rotate(5deg); }
+}
+
+/* ============ Main Container (Book) ============ */
+.main-container {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-dark) 100%);
+  box-shadow: 0 0 60px rgba(0,0,0,0.4), inset 0 0 30px rgba(139,105,20,0.1);
+  border-left: 3px solid var(--wood-dark);
+  border-right: 3px solid var(--wood-dark);
+  overflow: hidden;
+}
+
+.book-spine {
+  position: absolute;
+  left: -8px; top: 0; bottom: 0; width: 8px;
+  background: linear-gradient(90deg, #2a1a0e, var(--wood-dark), #2a1a0e);
+  border-radius: 4px 0 0 4px;
+}
+
+/* ============ Pages ============ */
+.page {
+  display: none;
+  padding: 20px 16px 40px;
+  min-height: 100vh;
+  animation: pageIn 0.4s ease-out;
+}
+
+.page.active { display: block; }
+
+@keyframes pageIn {
+  from { opacity:0; transform: translateY(20px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+/* ============ Top Bar ============ */
+.top-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 4px;
+  border-bottom: 2px dashed var(--paper-dark);
+  margin-bottom: 16px;
+}
+
+.top-btn {
+  background: var(--wood-dark);
+  color: var(--paper-light);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-family: var(--font-hand);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.top-btn:active { transform: scale(0.95); }
+.top-btn.music-on { background: var(--accent-gold); color: #fff; }
+
+/* ============ Title Area ============ */
+.title-area {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+
+.title-area h1 {
+  font-family: var(--font-hand);
+  font-size: 2rem;
+  color: var(--ink);
+  text-shadow: 2px 2px 0 var(--paper-dark);
+  user-select: none;
+  cursor: default;
+  line-height: 1.4;
+}
+
+.title-area .subtitle {
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  color: var(--ink-light);
+  margin-top: 6px;
+}
+
+/* ============ Category Grid ============ */
+.category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 8px 0 20px;
+}
+
+.cat-card {
+  background: linear-gradient(135deg, var(--paper-light), var(--paper));
+  border: 2px solid var(--paper-dark);
+  border-radius: var(--radius);
+  padding: 20px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 3px 10px var(--shadow);
+}
+
+.cat-card::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(212,160,23,0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cat-card:hover::after, .cat-card:active::after { opacity: 1; }
+.cat-card:active { transform: scale(0.96); }
+
+.cat-card .cat-icon {
+  font-size: 2.8rem;
+  display: block;
+  margin-bottom: 8px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.cat-card .cat-name {
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.cat-card .cat-tag {
+  display: inline-block;
+  background: var(--accent-gold);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 6px;
+  font-family: var(--font-hand);
+}
+
+/* ============ Today Records ============ */
+.today-records {
+  background: var(--paper-light);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px dashed var(--wood-light);
+}
+
+.today-records h3 {
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+
+.today-records .record-item {
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--paper-dark);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.today-records .record-item:last-child { border-bottom: none; }
+
+.today-records .record-tag {
+  background: var(--wood-light);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-family: var(--font-hand);
+}
+
+.no-records {
+  text-align: center;
+  color: var(--ink-light);
+  font-size: 0.85rem;
+  padding: 12px 0;
+}
+
+/* ============ Back Button ============ */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 2px solid var(--wood-dark);
+  color: var(--wood-dark);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+
+.back-btn:active { background: var(--wood-dark); color: var(--paper-light); }
+
+/* ============ Lottery Page Common ============ */
+.lottery-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.lottery-header h2 {
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.lottery-header .lottery-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.lottery-area {
+  background: var(--paper-light);
+  border-radius: var(--radius);
+  padding: 20px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--paper-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============ Medicine Box ============ */
+.medicine-box {
+  position: relative;
+  width: 160px;
+  height: 120px;
+  cursor: pointer;
+  margin: 20px auto;
+}
+
+.medicine-box .box-body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #e8d5a3, #c9a96e);
+  border: 3px solid #8b6914;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s;
+}
+
+.medicine-box .box-cross {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 3rem;
+  color: #c0392b;
+  z-index: 1;
+}
+
+.medicine-box .box-lid {
+  width: 110%;
+  height: 30px;
+  background: linear-gradient(180deg, #d4a76a, #b8894a);
+  border: 3px solid #8b6914;
+  border-radius: 12px 12px 0 0;
+  position: absolute;
+  top: -15px;
+  left: -5%;
+  transform-origin: left center;
+  transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 2;
+}
+
+.medicine-box.open .box-lid {
+  transform: rotate(-120deg) translateY(-20px);
+}
+
+.medicine-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 30px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s 0.3s;
+}
+
+.medicine-notes.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.medicine-note {
+  background: var(--paper);
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 6px var(--shadow);
+  transition: all 0.2s;
+  border: 1px solid var(--paper-dark);
+  transform: rotate(var(--rot, 0deg));
+}
+
+.medicine-note:active {
+  transform: scale(1.1) rotate(0deg);
+  background: var(--accent-gold);
+  color: #fff;
+}
+
+/* ============ Sushi Conveyor ============ */
+.sushi-conveyor {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  height: 120px;
+  background: var(--paper-dark);
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.sushi-belt {
+  display: flex;
+  gap: 20px;
+  padding: 10px;
+  animation: beltScroll 3s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes beltScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.sushi-belt.paused { animation-play-state: paused; }
+
+.sushi-plate {
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  animation: plateFloat 1.5s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes plateFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.sushi-plate:active { transform: scale(1.3); }
+
+.sushi-grab-btn {
+  display: block;
+  margin: 20px auto;
+  padding: 14px 36px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(192,57,43,0.4);
+}
+
+.sushi-grab-btn:active { transform: scale(0.95); }
+
+/* ============ Delivery Rider ============ */
+.rider-map {
+  width: 100%;
+  height: 240px;
+  background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #81c784;
+}
+
+.rider-map .road {
+  position: absolute;
+  background: #bdbdbd;
+  border-radius: 2px;
+}
+
+.rider-map .road.h { height: 6px; }
+.rider-map .road.v { width: 6px; }
+
+.rider-marker {
+  position: absolute;
+  font-size: 2rem;
+  transition: all 0.1s linear;
+  z-index: 2;
+}
+
+.rider-urge-btn {
+  display: block;
+  margin: 20px auto;
+  padding: 14px 36px;
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(255,152,0,0.4);
+}
+
+.rider-urge-btn:active { transform: scale(0.95); }
+
+.rider-box {
+  text-align: center;
+  font-size: 3rem;
+  margin-top: 16px;
+  animation: boxReveal 0.6s ease-out;
+}
+
+@keyframes boxReveal {
+  from { opacity:0; transform: scale(0) rotate(-180deg); }
+  to { opacity:1; transform: scale(1) rotate(0); }
+}
+
+/* ============ Gacha Machine ============ */
+.gacha-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 10px;
+}
+
+.gacha-ball {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  animation: gachaShake 3s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.gacha-ball::after {
+  content: '';
+  position: absolute;
+  top: 15%; left: 20%; width: 30%; height: 25%;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+}
+
+@keyframes gachaShake {
+  0%,100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-4px) rotate(-3deg); }
+  75% { transform: translateY(4px) rotate(3deg); }
+}
+
+.gacha-ball:active { transform: scale(1.2); }
+
+/* ============ Modals ============ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal-box {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  animation: modalIn 0.3s ease-out;
+  border: 3px solid var(--paper-dark);
+  position: relative;
+}
+
+@keyframes modalIn {
+  from { opacity:0; transform: scale(0.8) translateY(20px); }
+  to { opacity:1; transform: scale(1) translateY(0); }
+}
+
+.modal-box h3 {
+  font-family: var(--font-hand);
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
+.modal-box .result-food {
+  font-family: var(--font-hand);
+  font-size: 1.8rem;
+  color: var(--accent);
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--paper-light);
+  border-radius: 8px;
+  border: 2px dashed var(--accent-gold);
+}
+
+.modal-box .result-ssr {
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  color: #e91e63;
+  margin: 16px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff9c4, #ffecb3);
+  border-radius: 8px;
+  border: 3px solid var(--accent-gold);
+  animation: ssrGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes ssrGlow {
+  from { box-shadow: 0 0 10px var(--accent-gold); }
+  to { box-shadow: 0 0 30px var(--accent-gold), 0 0 60px #ff9800; }
+}
+
+.modal-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-btn:active { transform: scale(0.95); }
+
+.modal-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.modal-btn.secondary {
+  background: var(--paper-dark);
+  color: var(--ink);
+  border: 2px solid var(--wood-light);
+}
+
+.modal-btn.gold {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: #fff;
+}
+
+/* ============ Oracle Modal ============ */
+.oracle-content {
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+  padding: 20px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.oracle-content .oracle-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* ============ Pangpang Modal ============ */
+.pangpang-icon {
+  font-size: 4rem;
+  animation: pangpangBounce 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pangpangBounce {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+/* ============ Archive Page ============ */
+.archive-list {
+  list-style: none;
+}
+
+.archive-item {
+  background: var(--paper-light);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 4px solid var(--accent-gold);
+  font-size: 0.9rem;
+}
+
+.archive-item .archive-meta {
+  color: var(--ink-light);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.archive-item .archive-food {
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+}
+
+.archive-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.stat-card {
+  background: var(--paper-light);
+  padding: 14px;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.stat-card .stat-num {
+  font-family: var(--font-hand);
+  font-size: 2rem;
+  color: var(--accent-gold);
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--ink-light);
+}
+
+.top-foods {
+  margin-top: 16px;
+}
+
+.top-food-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--paper-dark);
+}
+
+.top-food-item .rank {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  width: 30px;
+}
+
+/* ============ Edit Page ============ */
+.edit-section {
+  background: var(--paper-light);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.edit-section h4 {
+  font-family: var(--font-hand);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-section h4 button {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+}
+
+.edit-menu-list {
+  list-style: none;
+}
+
+.edit-menu-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px dotted var(--paper-dark);
+  font-size: 0.9rem;
+}
+
+.edit-menu-list li button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.edit-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.edit-add-form input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--paper-dark);
+  border-radius: 20px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  background: var(--paper);
+}
+
+.edit-add-form button {
+  padding: 8px 16px;
+  background: var(--wood-light);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font-hand);
+}
+
+/* ============ Achievements ============ */
+.achievement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.achievement-card {
+  background: var(--paper-light);
+  padding: 14px;
+  border-radius: var(--radius);
+  text-align: center;
+  border: 2px solid var(--paper-dark);
+  transition: all 0.3s;
+}
+
+.achievement-card.unlocked {
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, #fffde7, #fff9c4);
+}
+
+.achievement-card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+
+.achievement-card .ach-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.achievement-card .ach-name {
+  font-family: var(--font-hand);
+  font-size: 0.9rem;
+}
+
+.achievement-card .ach-desc {
+  font-size: 0.7rem;
+  color: var(--ink-light);
+  margin-top: 4px;
+}
+
+.achievement-card .ach-badge {
+  display: inline-block;
+  background: var(--accent-gold);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  margin-top: 6px;
+  font-family: var(--font-hand);
+}
+
+/* ============ Daily Power ============ */
+.daily-power-area {
+  text-align: center;
+  padding: 20px;
+}
+
+.daily-power-cards {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.daily-power-card {
+  background: var(--paper-light);
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  border: 2px solid var(--paper-dark);
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.daily-power-card:active {
+  transform: scale(0.95);
+  border-color: var(--accent-gold);
+  background: #fffde7;
+}
+
+/* ============ Secondary Draw ============ */
+.secondary-grid {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.secondary-card {
+  padding: 12px 20px;
+  background: var(--paper-light);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-hand);
+  border: 2px solid var(--paper-dark);
+  transition: all 0.2s;
+}
+
+.secondary-card:active {
+  background: var(--accent-gold);
+  color: #fff;
+  transform: scale(0.95);
+}
+
+/* ============ Music Controls ============ */
+.music-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.music-volume input[type=range] {
+  flex: 1;
+  accent-color: var(--accent-gold);
+}
+
+/* ============ Tips Area ============ */
+.tips-area {
+  text-align: center;
+  margin-top: 12px;
+  font-family: var(--font-hand);
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  min-height: 24px;
+}
+
+/* ============ Responsive ============ */
+@media (min-width: 768px) {
+  .main-container {
+    max-width: 520px;
+    margin: 20px auto;
+    border-radius: 12px;
+    min-height: auto;
+  }
+  .category-grid { gap: 16px; }
+  .cat-card { padding: 24px 18px; }
+  .cat-card .cat-icon { font-size: 3.2rem; }
+}
+
+@media (max-width: 360px) {
+  .category-grid { gap: 8px; }
+  .cat-card { padding: 14px 10px; }
+  .cat-card .cat-icon { font-size: 2.2rem; }
+  .cat-card .cat-name { font-size: 0.85rem; }
+  .title-area h1 { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Floating Texts Layer ============ -->
+<div id="floating-layer"></div>
+
+<!-- ============ Main Book Container ============ -->
+<div class="main-container">
+<div class="book-spine"></div>
+
+<!-- ============ PAGE: Home ============ -->
+<section class="page active" id="page-home">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="top-btn" onclick="navigateTo('archive')">📜 吃饭档案馆</button>
+    <button class="top-btn" onclick="navigateTo('edit')">⚙️ 编辑菜单</button>
+    <button class="top-btn" id="btn-music" onclick="toggleMusic()">🎵 音乐</button>
+    <button class="top-btn" id="btn-oracle" onclick="showOracle()">🔮 命运神谕</button>
+    <button class="top-btn" onclick="navigateTo('achievements')">🏆 成就馆</button>
+  </div>
+
+  <!-- Title -->
+  <div class="title-area" id="title-click-area">
+    <h1 id="main-title">我说吃啥就吃啥</h1>
+    <p class="subtitle">不准纠结，抽到啥吃啥！</p>
+  </div>
+
+  <!-- Category Cards -->
+  <div class="category-grid" id="category-grid"></div>
+
+  <!-- Daily Power Button -->
+  <div style="text-align:center; margin: 12px 0;">
+    <button class="top-btn" id="btn-daily-power" onclick="showDailyPower()" style="font-size:1rem; padding:12px 24px;">
+      👑 今天我说了算
+    </button>
+  </div>
+
+  <!-- Today Records -->
+  <div class="today-records" id="today-records">
+    <h3>📋 今日饮食记录</h3>
+    <div id="today-records-content"></div>
+  </div>
+</section>
+
+<!-- ============ PAGE: Lottery - Ulcer (Medicine Box) ============ -->
+<section class="page" id="page-lottery-ulcer">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <div class="lottery-header">
+    <span class="lottery-icon">🏥</span>
+    <h2>暖胃药箱</h2>
+  </div>
+  <div class="lottery-area">
+    <div class="medicine-box" id="medicine-box" onclick="openMedicineBox()">
+      <div class="box-lid"></div>
+      <div class="box-body">
+        <span class="box-cross">➕</span>
+      </div>
+    </div>
+    <div class="medicine-notes" id="medicine-notes"></div>
+  </div>
+  <div class="tips-area" id="tips-ulcer"></div>
+</section>
+
+<!-- ============ PAGE: Lottery - Treat (Sushi Conveyor) ============ -->
+<section class="page" id="page-lottery-treat">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <div class="lottery-header">
+    <span class="lottery-icon">🍣</span>
+    <h2>回转寿司传送带</h2>
+  </div>
+  <div class="lottery-area" id="sushi-area">
+    <div class="sushi-conveyor">
+      <div class="sushi-belt" id="sushi-belt"></div>
+    </div>
+    <button class="sushi-grab-btn" id="sushi-grab" onclick="grabSushi()">我要拿这盘！</button>
+  </div>
+  <div class="tips-area" id="tips-treat"></div>
+</section>
+
+<!-- ============ PAGE: Lottery - Daily (Delivery Rider) ============ -->
+<section class="page" id="page-lottery-daily">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <div class="lottery-header">
+    <span class="lottery-icon">🛵</span>
+    <h2>外卖骑手送餐</h2>
+  </div>
+  <div class="lottery-area">
+    <div class="rider-map" id="rider-map">
+      <div class="road h" style="top:30%; left:0; width:100%;"></div>
+      <div class="road h" style="top:70%; left:0; width:100%;"></div>
+      <div class="road v" style="left:25%; top:0; height:100%;"></div>
+      <div class="road v" style="left:55%; top:0; height:100%;"></div>
+      <div class="road v" style="left:80%; top:0; height:100%;"></div>
+      <div class="rider-marker" id="rider-marker">🛵</div>
+    </div>
+    <button class="rider-urge-btn" id="rider-urge" onclick="urgeRider()">催单！</button>
+    <div id="rider-result" style="text-align:center; margin-top:12px;"></div>
+  </div>
+  <div class="tips-area" id="tips-daily"></div>
+</section>
+
+<!-- ============ PAGE: Lottery - Weekend (Gacha) ============ -->
+<section class="page" id="page-lottery-weekend">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <div class="lottery-header">
+    <span class="lottery-icon">🎉</span>
+    <h2>神秘扭蛋机</h2>
+  </div>
+  <div class="lottery-area">
+    <div class="gacha-grid" id="gacha-grid"></div>
+  </div>
+  <div class="tips-area" id="tips-weekend"></div>
+</section>
+
+<!-- ============ PAGE: Archive ============ -->
+<section class="page" id="page-archive">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <h2 style="font-family:var(--font-hand); text-align:center; margin-bottom:16px;">📜 吃饭档案馆</h2>
+
+  <div class="archive-stats" id="archive-stats"></div>
+
+  <h3 style="font-family:var(--font-hand); margin:16px 0 8px;">🏆 最常吃 TOP3</h3>
+  <div class="top-foods" id="top-foods"></div>
+
+  <h3 style="font-family:var(--font-hand); margin:16px 0 8px;">📝 全部历史</h3>
+  <ul class="archive-list" id="archive-list"></ul>
+  <div style="text-align:center; margin-top:12px;">
+    <button class="modal-btn secondary" onclick="clearHistory()">🗑️ 清空历史</button>
+  </div>
+</section>
+
+<!-- ============ PAGE: Edit ============ -->
+<section class="page" id="page-edit">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <h2 style="font-family:var(--font-hand); text-align:center; margin-bottom:16px;">⚙️ 编辑菜单</h2>
+  <div id="edit-content"></div>
+</section>
+
+<!-- ============ PAGE: Achievements ============ -->
+<section class="page" id="page-achievements">
+  <button class="back-btn" onclick="navigateTo('home')">← 返回</button>
+  <h2 style="font-family:var(--font-hand); text-align:center; margin-bottom:16px;">🏆 成就馆</h2>
+  <div class="achievement-grid" id="achievement-grid"></div>
+</section>
+
+</div><!-- /main-container -->
+
+<!-- ============ MODAL: Result ============ -->
+<div class="modal-overlay" id="modal-result">
+  <div class="modal-box">
+    <h3 id="modal-result-title">🎉 抽签结果</h3>
+    <div id="modal-result-content"></div>
+    <div id="modal-result-extra"></div>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="acceptFate()">认命了</button>
+      <button class="modal-btn secondary" onclick="rejectFate()">我要重抽</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Confirm Fate ============ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box">
+    <h3>🤔 确认接受命运安排吗？</h3>
+    <p id="modal-confirm-food" style="font-family:var(--font-hand); font-size:1.4rem; margin:12px 0;"></p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="confirmAccept()">认命了 ✅</button>
+      <button class="modal-btn secondary" onclick="confirmReject()">我要重抽 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Oracle ============ -->
+<div class="modal-overlay" id="modal-oracle">
+  <div class="modal-box">
+    <h3>🔮 命运神谕</h3>
+    <div class="oracle-content" id="oracle-content"></div>
+    <button class="modal-btn primary" onclick="closeModal('modal-oracle')">知道了！</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: Pangpang ============ -->
+<div class="modal-overlay" id="modal-pangpang">
+  <div class="modal-box">
+    <div class="pangpang-icon">🐱</div>
+    <h3>胖胖突然出现了！</h3>
+    <p style="margin:12px 0;">🐱 喵~ 听我的准没错！我推荐：</p>
+    <p id="pangpang-rec" style="font-family:var(--font-hand); font-size:1.3rem; color:var(--accent-gold);"></p>
+    <button class="modal-btn primary" onclick="closeModal('modal-pangpang')">听胖胖的！</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: Daily Power ============ -->
+<div class="modal-overlay" id="modal-daily-power">
+  <div class="modal-box">
+    <h3>👑 菌菌任性券</h3>
+    <p style="margin:8px 0;">今天我说了算！选一个吧~</p>
+    <div class="daily-power-cards" id="daily-power-cards"></div>
+    <button class="modal-btn secondary" onclick="closeModal('modal-daily-power')">算了，还是抽签吧</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: SSR ============ -->
+<div class="modal-overlay" id="modal-ssr">
+  <div class="modal-box">
+    <h3>🌟 SSR！🌟</h3>
+    <div class="result-ssr" id="ssr-content"></div>
+    <div style="font-size:3rem; animation: pangpangBounce 0.3s infinite alternate;">🎊</div>
+    <button class="modal-btn gold" onclick="acceptSSR()">太棒了！！！</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: Special (Omakase / Fishing) ============ -->
+<div class="modal-overlay" id="modal-special">
+  <div class="modal-box" id="modal-special-content"></div>
+</div>
+
+<!-- ============ MODAL: Secondary Draw ============ -->
+<div class="modal-overlay" id="modal-secondary">
+  <div class="modal-box">
+    <h3>🎯 到了再选！</h3>
+    <p style="margin:8px 0;">既然到了，看看具体吃啥？</p>
+    <div class="secondary-grid" id="secondary-grid"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Lobster Re-draw ============ -->
+<div class="modal-overlay" id="modal-lobster">
+  <div class="modal-box">
+    <h3>🦞 小龙虾时间！</h3>
+    <p style="font-family:var(--font-hand); font-size:1.2rem; margin:12px 0;">小龙虾小龙虾~<br>抽到此选项可以再抽一次！</p>
+    <button class="modal-btn gold" onclick="lobsterRedraw()">再抽一次 🦞</button>
+    <button class="modal-btn secondary" onclick="lobsterAccept()">就吃小龙虾！</button>
+  </div>
+</div>
+
+<script>
+/* ==================================================================
+   《我说吃啥就吃啥 V2.0》 - 完整 JavaScript
+   ================================================================== */
+
+// ==================== DEFAULT MENU DATA ====================
+const DEFAULT_CATEGORIES = [
+  {
+    id: 'ulcer',
+    name: '菌菌的口腔溃疡疼死了！',
+    icon: '🥣',
+    type: 'medicine_box',
+    menus: {
+      normal: ['面屋🐖一', '潮汕牛肉河粉', '肠粉', '吉野家']
+    },
+    tips: ['别吃辣了祖宗', '嘴巴都烂了还想火锅？', '今天养生'],
+    rareRate: 0,
+    specialRate: 0
+  },
+  {
+    id: 'treat',
+    name: '吃点好的开心一下~',
+    icon: '🍣',
+    type: 'sushi_conveyor',
+    menus: {
+      normal: ['寿西狼~~', '火锅火锅', '日料', '柴火', '烤肉自助'],
+      rare: ['我知道有点远，但我们去吃串门吧', '胖胖想我们了，去吃肉食堂呗？', '我们好像没有吃过IKEA耶，IKEA怎么样？']
+    },
+    tips: [],
+    rareRate: 0.05,
+    specialRate: 0
+  },
+  {
+    id: 'daily',
+    name: '日常',
+    icon: '🍱',
+    type: 'delivery_rider',
+    menus: {
+      normal: ['华强广场的朝鲜烤肉', '渝月', '美味烧鸡', '蒙古烤肉', '开封菜&金拱门二选一', '转转火锅', '骑车出门去~走到哪吃到那~', '柴火', '烤肉自助'],
+      rare: ['我知道有点远，但我们去吃串门吧', '胖胖想我们了，去吃肉食堂呗？', '我们好像没有吃过IKEA耶，IKEA怎么样？']
+    },
+    tips: [],
+    rareRate: 0.05,
+    specialRate: 0
+  },
+  {
+    id: 'weekend',
+    name: '周末专区',
+    icon: '🎉',
+    type: 'gacha_machine',
+    menus: {
+      normal: ['小红书的收藏夹要吃灰了，我们去探店吧！', '小龙虾小龙虾~抽到此选项可以再抽一次', '菌菌秘制Taco', '在家涮火锅怎么样？', '去华强广场吧，到了就知道要吃啥了', '去同泰广场，到了就知道要吃啥了'],
+      special: ['omakase', '去钓虾吧'],
+      rare: ['我知道有点远，但我们去吃串门吧', '胖胖想我们了，去吃肉食堂呗？', '我们好像没有吃过IKEA耶，IKEA怎么样？']
+    },
+    tips: [],
+    rareRate: 0.05,
+    specialRate: 0.05
+  }
+];
+
+const DEFAULT_PANGPANG_FAVORITES = ['肉食堂', '串门', '烤肉自助'];
+const SSR_CONTENT = '恭喜你抽到SSR，凭此卷找我领取电影票两张';
+const SSR_RATE = 0.01;
+const PANGPANG_RATE = 0.10;
+
+const SECONDARY_OPTIONS = ['韩餐', '烤肉', '烧鸡', '火锅', '其他'];
+
+const FLOATING_TEXTS = [
+  '快点选啦！别犹豫！',
+  '我快饿扁了！',
+  '你要饿死我吗？',
+  '抽到啥是啥，不准变！',
+  '再不吃饭我要闹了！',
+  '犹豫一分钟，饿肚子半小时！',
+  '别看了，命运已经决定了！',
+  '快抽快抽！',
+  '吃饭不积极，思想有问题！',
+  '别磨蹭了，胃已经在抗议了！',
+  '选啥不是吃，赶紧的！',
+];
+
+const ORACLE_TYPES = [
+  { label: '宜吃肉', icon: '🥩', keywords: ['肉', '烤肉', '烧鸡', '牛肉', '猪'] },
+  { label: '宜火锅', icon: '🍲', keywords: ['火锅', '涮'] },
+  { label: '宜探店', icon: '🔍', keywords: ['探店', '新'] },
+  { label: '宜新店', icon: '✨', keywords: ['新', '探店', 'IKEA'] },
+  { label: '宜烧烤', icon: '🍖', keywords: ['烤肉', '烧烤', '烧鸡', '柴火'] },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'hotpot_master', name: '火锅狂魔', desc: '火锅累计10次', icon: '🍲', check: (s) => (s.foodCounts['火锅火锅'] || 0) >= 10 },
+  { id: 'lobster_god', name: '小龙虾之神', desc: '小龙虾累计5次', icon: '🦞', check: (s) => (s.foodCounts['小龙虾小龙虾~抽到此选项可以再抽一次'] || 0) >= 5 },
+  { id: 'fate_believer', name: '命运信徒', desc: '连续20次未重抽', icon: '🙏', check: (s) => (s.consecutiveNoReroll || 0) >= 20 },
+  { id: 'ulcer_lover', name: '菌菌最爱', desc: '口腔溃疡专区20次', icon: '🥣', check: (s) => (s.categoryCounts['ulcer'] || 0) >= 20 },
+  { id: 'ssr_lucky', name: 'SSR欧皇', desc: '抽中SSR', icon: '🌟', check: (s) => (s.ssrCount || 0) >= 1 },
+];
+
+// ==================== GACHA BALL COLORS ====================
+const GACHA_COLORS = [
+  '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff922b',
+  '#ff6eb4', '#a66cff', '#47c9e5', '#ff9f43', '#ee5a24',
+  '#0abde3', '#f368e0', '#feca57', '#54a0ff', '#5f27cd',
+  '#01a3a4', '#ff6348', '#7bed9f', '#70a1ff', '#ffa502',
+  '#2ed573', '#ff4757', '#1e90ff', '#ff6348', '#9980fa',
+];
+
+// ==================== APP STATE ====================
+let AppState = {
+  currentPage: 'home',
+  currentCategory: null,
+  currentDrawResult: null,
+  floatingTextTimer: null,
+  musicPlaying: false,
+  musicVolume: 0.5,
+  dailyPowerUsed: false,
+  dailyPowerDate: null,
+  oracleToday: null,
+  titleClickCount: 0,
+  pendingResult: null,
+  riderInterval: null,
+};
+
+// ==================== PERSISTENCE ====================
+function loadData(key, defaultValue) {
+  try {
+    const raw = localStorage.getItem('eats_' + key);
+    return raw ? JSON.parse(raw) : defaultValue;
+  } catch (e) { return defaultValue; }
+}
+
+function saveData(key, value) {
+  try {
+    localStorage.setItem('eats_' + key, JSON.stringify(value));
+  } catch (e) { /* quota exceeded, silently ignore */ }
+}
+
+function loadAllData() {
+  return {
+    categories: loadData('categories', DEFAULT_CATEGORIES),
+    history: loadData('history', []),
+    foodCounts: loadData('foodCounts', {}),
+    categoryCounts: loadData('categoryCounts', {}),
+    consecutiveNoReroll: loadData('consecutiveNoReroll', 0),
+    ssrCount: loadData('ssrCount', 0),
+    achievements: loadData('achievements', []),
+    oracle: loadData('oracle', null),
+    oracleDate: loadData('oracleDate', null),
+    dailyPowerDate: loadData('dailyPowerDate', null),
+    musicOn: loadData('musicOn', false),
+    musicVol: loadData('musicVol', 0.5),
+  };
+}
+
+let PersistData = loadAllData();
+
+function saveAllMeta() {
+  saveData('history', PersistData.history);
+  saveData('foodCounts', PersistData.foodCounts);
+  saveData('categoryCounts', PersistData.categoryCounts);
+  saveData('consecutiveNoReroll', PersistData.consecutiveNoReroll);
+  saveData('ssrCount', PersistData.ssrCount);
+  saveData('achievements', PersistData.achievements);
+  saveData('oracle', PersistData.oracle);
+  saveData('oracleDate', PersistData.oracleDate);
+  saveData('dailyPowerDate', PersistData.dailyPowerDate);
+  saveData('musicOn', PersistData.musicOn);
+  saveData('musicVol', PersistData.musicVol);
+}
+
+function saveCategories() {
+  saveData('categories', PersistData.categories);
+}
+
+// ==================== NAVIGATION ====================
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) {
+    target.classList.add('active');
+    AppState.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (page === 'archive') renderArchive();
+    if (page === 'edit') renderEdit();
+    if (page === 'achievements') renderAchievements();
+    if (page === 'home') renderHome();
+
+    // Stop rider on leave
+    if (AppState.riderInterval) {
+      clearInterval(AppState.riderInterval);
+      AppState.riderInterval = null;
+    }
+
+    // Init lottery pages
+    if (page.startsWith('lottery-')) {
+      const catId = page.replace('lottery-', '');
+      AppState.currentCategory = catId;
+      initLotteryPage(catId);
+    }
+  }
+  closeAllModals();
+}
+
+// ==================== HOME PAGE ====================
+function renderHome() {
+  const grid = document.getElementById('category-grid');
+  const cats = PersistData.categories;
+  grid.innerHTML = cats.map((cat, i) => `
+    <div class="cat-card" onclick="navigateTo('lottery-${cat.id}')" style="animation: pageIn 0.4s ease-out ${i * 0.1}s both;">
+      <span class="cat-icon">${cat.icon}</span>
+      <span class="cat-name">${cat.name}</span>
+      ${cat.type ? `<span class="cat-tag">${getTypeLabel(cat.type)}</span>` : ''}
+    </div>
+  `).join('');
+
+  renderTodayRecords();
+  updateDailyPowerBtn();
+}
+
+function getTypeLabel(type) {
+  const labels = { medicine_box: '🏥 暖胃药箱', sushi_conveyor: '🍣 回转寿司', delivery_rider: '🛵 外卖骑手', gacha_machine: '🎉 扭蛋机' };
+  return labels[type] || '';
+}
+
+function renderTodayRecords() {
+  const container = document.getElementById('today-records-content');
+  const today = new Date().toLocaleDateString('zh-CN');
+  const todayItems = PersistData.history.filter(h => h.date === today);
+
+  if (todayItems.length === 0) {
+    container.innerHTML = '<div class="no-records">今天还没抽签呢，快来试试手气吧~ 🍀</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <p style="margin-bottom:8px; font-size:0.9rem;">今日已抽签：<strong>${todayItems.length}</strong> 次</p>
+    ${todayItems.map((h, i) => `
+      <div class="record-item">
+        <span>${i + 1}.</span>
+        <span class="record-tag">${getCategoryName(h.category)}</span>
+        <span style="flex:1;">${h.food}</span>
+        <span style="font-size:0.75rem; color:var(--ink-light);">${h.time}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+function getCategoryName(catId) {
+  const cat = PersistData.categories.find(c => c.id === catId);
+  return cat ? cat.icon + ' ' + cat.name.substring(0, 6) + '...' : catId;
+}
+
+function updateDailyPowerBtn() {
+  const btn = document.getElementById('btn-daily-power');
+  if (!btn) return;
+  const today = new Date().toLocaleDateString('zh-CN');
+  if (PersistData.dailyPowerDate === today) {
+    btn.textContent = '👑 任性券已用（明天再来）';
+    btn.style.opacity = '0.5';
+    AppState.dailyPowerUsed = true;
+  } else {
+    btn.textContent = '👑 今天我说了算';
+    btn.style.opacity = '1';
+    AppState.dailyPowerUsed = false;
+  }
+}
+
+// ==================== LOTTERY ENGINE ====================
+function draw(categoryId, pangpangBoosted = false) {
+  const cat = PersistData.categories.find(c => c.id === categoryId);
+  if (!cat) return null;
+
+  const menus = cat.menus;
+  let pool = [];
+  let weights = [];
+
+  // SSR check (1%)
+  if (Math.random() < SSR_RATE) {
+    return { type: 'ssr', content: SSR_CONTENT, category: categoryId };
+  }
+
+  // Pangpang system (10%, before draw)
+  if (!pangpangBoosted && Math.random() < PANGPANG_RATE && categoryId !== 'ulcer') {
+    return { type: 'pangpang', category: categoryId };
+  }
+
+  // Oracle weight adjustment
+  let oracleBoost = null;
+  if (PersistData.oracle && PersistData.oracleDate === new Date().toLocaleDateString('zh-CN')) {
+    oracleBoost = PersistData.oracle.keywords || [];
+  }
+
+  // Build pool
+  let hasSpecial = menus.special && menus.special.length > 0;
+  let hasRare = menus.rare && menus.rare.length > 0;
+  let normalItems = menus.normal || [];
+
+  // Special tier (weekend only, 5%)
+  if (hasSpecial && Math.random() < (cat.specialRate || 0.05)) {
+    const item = menus.special[Math.floor(Math.random() * menus.special.length)];
+    return processResult({ type: 'special', content: item, category: categoryId });
+  }
+
+  // Rare tier (5%)
+  if (hasRare && Math.random() < (cat.rareRate || 0.05)) {
+    const item = menus.rare[Math.floor(Math.random() * menus.rare.length)];
+    return processResult({ type: 'rare', content: item, category: categoryId });
+  }
+
+  // Normal tier with weight adjustments
+  let items = [...normalItems];
+  let itemWeights = items.map(() => 1);
+
+  // Pangpang boost
+  if (pangpangBoosted) {
+    items.forEach((item, i) => {
+      if (DEFAULT_PANGPANG_FAVORITES.some(f => item.includes(f))) {
+        itemWeights[i] = 5;
+      }
+    });
+  }
+
+  // Oracle boost
+  if (oracleBoost) {
+    items.forEach((item, i) => {
+      if (oracleBoost.some(kw => item.includes(kw))) {
+        itemWeights[i] = (itemWeights[i] || 1) * 3;
+      }
+    });
+  }
+
+  // Weighted random
+  const totalWeight = itemWeights.reduce((a, b) => a + b, 0);
+  let rand = Math.random() * totalWeight;
+  let selected = items[0];
+  for (let i = 0; i < items.length; i++) {
+    rand -= itemWeights[i];
+    if (rand <= 0) { selected = items[i]; break; }
+  }
+
+  return processResult({ type: 'normal', content: selected, category: categoryId });
+}
+
+function processResult(result) {
+  // Lobster re-draw
+  if (result.content && result.content.includes('小龙虾')) {
+    return { ...result, lobsterRedraw: true };
+  }
+  // Secondary draw for 华强/同泰
+  if (result.content && (result.content.includes('华强广场') || result.content.includes('同泰广场'))) {
+    return { ...result, needSecondary: true };
+  }
+  // Omakase special
+  if (result.content === 'omakase') {
+    return { ...result, omakase: true };
+  }
+  // Fishing special
+  if (result.content === '去钓虾吧') {
+    return { ...result, fishing: true };
+  }
+  return result;
+}
+
+// ==================== INIT LOTTERY PAGES ====================
+function initLotteryPage(catId) {
+  const cat = PersistData.categories.find(c => c.id === catId);
+  if (!cat) return;
+
+  switch (cat.type) {
+    case 'medicine_box':
+      initMedicineBox(cat);
+      break;
+    case 'sushi_conveyor':
+      initSushiConveyor(cat);
+      break;
+    case 'delivery_rider':
+      initDeliveryRider(cat);
+      break;
+    case 'gacha_machine':
+      initGachaMachine(cat);
+      break;
+    default:
+      initMedicineBox(cat);
+  }
+}
+
+// --- Medicine Box ---
+function initMedicineBox(cat) {
+  const box = document.getElementById('medicine-box');
+  const notes = document.getElementById('medicine-notes');
+  box.classList.remove('open');
+  notes.classList.remove('show');
+  notes.innerHTML = '';
+
+  const tip = cat.tips && cat.tips.length > 0
+    ? cat.tips[Math.floor(Math.random() * cat.tips.length)]
+    : '别吃辣了祖宗';
+  document.getElementById('tips-ulcer').textContent = '💬 ' + tip;
+}
+
+function openMedicineBox() {
+  const box = document.getElementById('medicine-box');
+  if (box.classList.contains('open')) return;
+  box.classList.add('open');
+
+  const notes = document.getElementById('medicine-notes');
+  const cat = PersistData.categories.find(c => c.id === 'ulcer');
+  const allMenus = cat.menus.normal || [];
+
+  setTimeout(() => {
+    notes.innerHTML = allMenus.map((m, i) => `
+      <div class="medicine-note" style="--rot:${(Math.random()-0.5)*12}deg; animation: pageIn 0.4s ease-out ${i*0.1}s both;" onclick="onMedicinePick('${escapeHtml(m)}')">${m}</div>
+    `).join('');
+    notes.classList.add('show');
+  }, 600);
+}
+
+function onMedicinePick(food) {
+  const result = processResult({ type: 'normal', content: food, category: 'ulcer' });
+  showResultModal(result);
+}
+
+// --- Sushi Conveyor ---
+function initSushiConveyor(cat) {
+  const belt = document.getElementById('sushi-belt');
+  const sushiEmojis = ['🍣','🍱','🍤','🍙','🍚','🍘','🍢','🍡','🥟','🍜','🍝','🥘','🍛','🍲','🦪','🥩'];
+  // Duplicate for seamless loop
+  const plates = [];
+  for (let i = 0; i < 12; i++) {
+    plates.push(sushiEmojis[i % sushiEmojis.length]);
+  }
+  belt.innerHTML = plates.concat(plates).map((e, i) =>
+    `<span class="sushi-plate" style="--delay:${(i*0.2).toFixed(1)}s">${e}</span>`
+  ).join('');
+  belt.classList.remove('paused');
+  document.getElementById('sushi-grab').style.display = 'block';
+  document.getElementById('tips-treat').textContent = '';
+}
+
+function grabSushi() {
+  const belt = document.getElementById('sushi-belt');
+  belt.classList.add('paused');
+  document.getElementById('sushi-grab').style.display = 'none';
+
+  const cat = PersistData.categories.find(c => c.id === 'treat');
+  let result = draw('treat');
+
+  if (result && result.type === 'pangpang') {
+    showPangpangModal('treat');
+    return;
+  }
+
+  setTimeout(() => showResultModal(result), 400);
+}
+
+// --- Delivery Rider ---
+function initDeliveryRider(cat) {
+  const marker = document.getElementById('rider-marker');
+  marker.style.left = '10%';
+  marker.style.top = '20%';
+  document.getElementById('rider-urge').style.display = 'block';
+  document.getElementById('rider-result').innerHTML = '';
+  document.getElementById('tips-daily').textContent = '';
+
+  // Random movement
+  if (AppState.riderInterval) clearInterval(AppState.riderInterval);
+  AppState.riderInterval = setInterval(() => {
+    const map = document.getElementById('rider-map');
+    const rect = map.getBoundingClientRect();
+    const x = 5 + Math.random() * 80;
+    const y = 5 + Math.random() * 80;
+    marker.style.left = x + '%';
+    marker.style.top = y + '%';
+  }, 800);
+}
+
+function urgeRider() {
+  if (AppState.riderInterval) {
+    clearInterval(AppState.riderInterval);
+    AppState.riderInterval = null;
+  }
+  document.getElementById('rider-urge').style.display = 'none';
+  document.getElementById('tips-daily').textContent = '🏍️ 骑手正在取餐...';
+
+  const cat = PersistData.categories.find(c => c.id === 'daily');
+  let result = draw('daily');
+
+  if (result && result.type === 'pangpang') {
+    showPangpangModal('daily');
+    return;
+  }
+
+  setTimeout(() => {
+    document.getElementById('rider-result').innerHTML = '<div class="rider-box">📦</div>';
+    document.getElementById('tips-daily').textContent = '📦 餐到了！打开看看...';
+    setTimeout(() => showResultModal(result), 600);
+  }, 1500);
+}
+
+// --- Gacha Machine ---
+function initGachaMachine(cat) {
+  const grid = document.getElementById('gacha-grid');
+  grid.innerHTML = GACHA_COLORS.map((color, i) => `
+    <div class="gacha-ball" style="background:${color}; --delay:${(i*0.12).toFixed(1)}s; animation: gachaShake ${(2+Math.random()*3).toFixed(1)}s ease-in-out infinite; animation-delay: ${(Math.random()*2).toFixed(1)}s;"
+         onclick="onGachaPick(${i})">🎪</div>
+  `).join('');
+  document.getElementById('tips-weekend').textContent = '';
+}
+
+function onGachaPick(index) {
+  const cat = PersistData.categories.find(c => c.id === 'weekend');
+  let result = draw('weekend');
+
+  if (result && result.type === 'pangpang') {
+    showPangpangModal('weekend');
+    return;
+  }
+
+  // Highlight selected ball
+  const balls = document.querySelectorAll('.gacha-ball');
+  if (balls[index]) {
+    balls[index].style.transform = 'scale(1.3)';
+    balls[index].style.boxShadow = '0 0 30px rgba(255,215,0,0.8)';
+  }
+
+  setTimeout(() => showResultModal(result), 500);
+}
+
+// ==================== RESULT HANDLING ====================
+function showResultModal(result) {
+  if (!result) return;
+  AppState.pendingResult = result;
+
+  // Handle special types first
+  if (result.type === 'ssr') {
+    document.getElementById('ssr-content').textContent = result.content;
+    openModal('modal-ssr');
+    return;
+  }
+  if (result.lobsterRedraw) {
+    AppState.currentDrawResult = result;
+    openModal('modal-lobster');
+    return;
+  }
+  if (result.omakase || result.fishing) {
+    showSpecialModal(result);
+    return;
+  }
+  if (result.needSecondary) {
+    showSecondaryDraw(result);
+    return;
+  }
+
+  // Normal result - show confirm
+  showConfirmModal(result);
+}
+
+function showConfirmModal(result) {
+  AppState.currentDrawResult = result;
+  const cat = PersistData.categories.find(c => c.id === result.category);
+  document.getElementById('modal-confirm-food').innerHTML = `
+    <span style="font-size:1rem; color:var(--ink-light);">【${cat ? cat.name : result.category}】</span><br>
+    ${result.type === 'rare' ? '✨ 稀有菜单 ✨<br>' : ''}
+    <span style="font-size:1.6rem;">${result.content}</span>
+  `;
+  openModal('modal-confirm');
+}
+
+function confirmAccept() {
+  closeModal('modal-confirm');
+  acceptFate();
+}
+
+function confirmReject() {
+  closeModal('modal-confirm');
+  rejectFate();
+}
+
+function acceptFate() {
+  closeModal('modal-result');
+  const result = AppState.currentDrawResult;
+  if (!result) return;
+
+  // Record to history
+  const now = new Date();
+  const record = {
+    date: now.toLocaleDateString('zh-CN'),
+    time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    category: result.category,
+    food: result.content,
+    type: result.type || 'normal',
+  };
+
+  PersistData.history.unshift(record);
+
+  // Update counts
+  PersistData.foodCounts[result.content] = (PersistData.foodCounts[result.content] || 0) + 1;
+  PersistData.categoryCounts[result.category] = (PersistData.categoryCounts[result.category] || 0) + 1;
+  PersistData.consecutiveNoReroll = (PersistData.consecutiveNoReroll || 0) + 1;
+
+  checkAchievements();
+  saveAllMeta();
+
+  // Show brief success toast-like feedback
+  AppState.currentDrawResult = null;
+  renderHome();
+  navigateTo('home');
+}
+
+function rejectFate() {
+  closeModal('modal-result');
+  PersistData.consecutiveNoReroll = 0;
+  saveAllMeta();
+  AppState.currentDrawResult = null;
+
+  // Re-init the lottery page
+  if (AppState.currentCategory) {
+    initLotteryPage(AppState.currentCategory);
+  }
+}
+
+function acceptSSR() {
+  closeModal('modal-ssr');
+  const result = { type: 'ssr', content: SSR_CONTENT, category: AppState.currentCategory || 'unknown' };
+  AppState.currentDrawResult = result;
+
+  const now = new Date();
+  const record = {
+    date: now.toLocaleDateString('zh-CN'),
+    time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    category: result.category,
+    food: 'SSR: ' + SSR_CONTENT,
+    type: 'ssr',
+  };
+
+  PersistData.history.unshift(record);
+  PersistData.ssrCount = (PersistData.ssrCount || 0) + 1;
+  PersistData.foodCounts['SSR'] = (PersistData.foodCounts['SSR'] || 0) + 1;
+  PersistData.categoryCounts[result.category] = (PersistData.categoryCounts[result.category] || 0) + 1;
+  PersistData.consecutiveNoReroll = (PersistData.consecutiveNoReroll || 0) + 1;
+
+  checkAchievements();
+  saveAllMeta();
+  AppState.currentDrawResult = null;
+  renderHome();
+  navigateTo('home');
+}
+
+// --- Special Modals ---
+function showSpecialModal(result) {
+  if (result.omakase) {
+    document.getElementById('modal-special-content').innerHTML = `
+      <h3>🍣 OMAKASE TIME 🍣</h3>
+      <div style="font-size:3rem; margin:16px 0;">🍣✨🍣</div>
+      <p style="font-family:var(--font-hand); font-size:1.2rem; color:var(--accent-gold);">金色卡片：OMAKASE</p>
+      <p style="font-size:0.9rem; margin:8px 0;">今天吃顿好的！</p>
+      <div class="modal-btns">
+        <button class="modal-btn gold" onclick="specialAccept('${escapeHtml(result.content)}', '${result.category}')">太棒了！</button>
+      </div>
+    `;
+  } else if (result.fishing) {
+    document.getElementById('modal-special-content').innerHTML = `
+      <h3>🎣 去钓虾吧！</h3>
+      <div style="font-size:4rem; margin:16px 0;">🦐🎣🦐</div>
+      <p style="font-family:var(--font-hand); font-size:1.1rem; margin:8px 0;">今天不一定吃得最好，<br>但一定玩得最开心！</p>
+      <div class="modal-btns">
+        <button class="modal-btn gold" onclick="specialAccept('${escapeHtml(result.content)}', '${result.category}')">出发钓虾 🦐</button>
+      </div>
+    `;
+  }
+  openModal('modal-special');
+}
+
+function specialAccept(food, category) {
+  closeModal('modal-special');
+  const result = { type: 'special', content: food, category };
+  AppState.currentDrawResult = result;
+  acceptFate();
+}
+
+// --- Secondary Draw ---
+function showSecondaryDraw(result) {
+  AppState.currentDrawResult = result;
+  const grid = document.getElementById('secondary-grid');
+  grid.innerHTML = SECONDARY_OPTIONS.map(o =>
+    `<div class="secondary-card" onclick="secondaryPick('${o}', '${escapeHtml(result.content)}', '${result.category}')">${o}</div>`
+  ).join('');
+  openModal('modal-secondary');
+}
+
+function secondaryPick(picked, parentFood, category) {
+  closeModal('modal-secondary');
+  const finalFood = parentFood + ' → ' + picked;
+  const result = { type: 'normal', content: finalFood, category, parentFood, secondaryPick: picked };
+  AppState.currentDrawResult = result;
+  showConfirmModal(result);
+}
+
+// --- Lobster ---
+function lobsterRedraw() {
+  closeModal('modal-lobster');
+  const catId = AppState.currentCategory;
+  let result = draw(catId);
+  // Prevent infinite lobster loop
+  let attempts = 0;
+  while (result && result.lobsterRedraw && attempts < 10) {
+    result = draw(catId);
+    attempts++;
+  }
+  showResultModal(result);
+}
+
+function lobsterAccept() {
+  closeModal('modal-lobster');
+  const result = AppState.currentDrawResult;
+  AppState.currentDrawResult = result;
+  showConfirmModal(result);
+}
+
+// ==================== PANGPANG SYSTEM ====================
+function showPangpangModal(catId) {
+  const rec = DEFAULT_PANGPANG_FAVORITES[Math.floor(Math.random() * DEFAULT_PANGPANG_FAVORITES.length)];
+  document.getElementById('pangpang-rec').textContent = '👉 ' + rec + ' 👈';
+  openModal('modal-pangpang');
+
+  // Store for redraw
+  AppState._pangpangCatId = catId;
+}
+
+// Override close for pangpang to trigger boosted draw
+const origCloseModal = function(id) {
+  document.getElementById(id).classList.remove('active');
+};
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+
+  if (id === 'modal-pangpang' && AppState._pangpangCatId) {
+    const catId = AppState._pangpangCatId;
+    AppState._pangpangCatId = null;
+    setTimeout(() => {
+      let result = draw(catId, true);
+      showResultModal(result);
+    }, 300);
+  }
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+// ==================== ORACLE SYSTEM ====================
+function showOracle() {
+  const oracle = ORACLE_TYPES[Math.floor(Math.random() * ORACLE_TYPES.length)];
+  PersistData.oracle = oracle;
+  PersistData.oracleDate = new Date().toLocaleDateString('zh-CN');
+  saveAllMeta();
+  AppState.oracleToday = oracle;
+
+  document.getElementById('oracle-content').innerHTML = `
+    <span class="oracle-icon">${oracle.icon}</span>
+    <p style="font-size:1.5rem; font-family:var(--font-hand); margin:8px 0;">今日${oracle.label}</p>
+    <p style="font-size:0.9rem; color:var(--ink-light);">神谕已降下，${oracle.label}类菜单权重提升！</p>
+  `;
+  openModal('modal-oracle');
+}
+
+// ==================== DAILY POWER ====================
+function showDailyPower() {
+  const today = new Date().toLocaleDateString('zh-CN');
+  if (PersistData.dailyPowerDate === today) {
+    alert('今天的任性券已经用过了哦~ 明天再来吧！👑');
+    return;
+  }
+
+  // Pick 3 random items from all categories
+  let allFoods = [];
+  PersistData.categories.forEach(cat => {
+    if (cat.menus.normal) allFoods = allFoods.concat(cat.menus.normal.map(f => ({ food: f, category: cat.id })));
+    if (cat.menus.rare) allFoods = allFoods.concat(cat.menus.rare.map(f => ({ food: f, category: cat.id })));
+    if (cat.menus.special) allFoods = allFoods.concat(cat.menus.special.map(f => ({ food: f, category: cat.id })));
+  });
+
+  // Shuffle and pick 3
+  const shuffled = allFoods.sort(() => Math.random() - 0.5);
+  const picks = shuffled.slice(0, 3);
+
+  document.getElementById('daily-power-cards').innerHTML = picks.map(p => `
+    <div class="daily-power-card" onclick="dailyPowerPick('${escapeHtml(p.food)}', '${p.category}')">${p.food}</div>
+  `).join('');
+
+  openModal('modal-daily-power');
+}
+
+function dailyPowerPick(food, category) {
+  closeModal('modal-daily-power');
+
+  const today = new Date().toLocaleDateString('zh-CN');
+  PersistData.dailyPowerDate = today;
+  saveAllMeta();
+  updateDailyPowerBtn();
+
+  const result = { type: 'normal', content: food, category };
+  AppState.currentDrawResult = result;
+  showConfirmModal(result);
+}
+
+// ==================== ARCHIVE ====================
+function renderArchive() {
+  const list = document.getElementById('archive-list');
+  const stats = document.getElementById('archive-stats');
+  const topFoods = document.getElementById('top-foods');
+
+  // Stats
+  const thisMonth = new Date().toLocaleDateString('zh-CN').substring(0, 7); // "2026/06"
+  const monthCount = PersistData.history.filter(h => h.date.startsWith(thisMonth)).length;
+
+  stats.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num">${PersistData.history.length}</div>
+      <div class="stat-label">总抽签次数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${monthCount}</div>
+      <div class="stat-label">本月抽签次数</div>
+    </div>
+  `;
+
+  // Top foods
+  const sorted = Object.entries(PersistData.foodCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  topFoods.innerHTML = sorted.length > 0
+    ? sorted.map(([food, count], i) => `
+        <div class="top-food-item">
+          <span class="rank">${['🥇','🥈','🥉'][i]}</span>
+          <span>${food}</span>
+          <span style="font-family:var(--font-hand); color:var(--accent-gold);">${count}次</span>
+        </div>
+      `).join('')
+    : '<p style="text-align:center; color:var(--ink-light);">暂无数据</p>';
+
+  // Full history
+  list.innerHTML = PersistData.history.length > 0
+    ? PersistData.history.map(h => `
+        <li class="archive-item">
+          <div class="archive-meta">${h.date} ${h.time} · ${getCategoryName(h.category)}${h.type === 'rare' ? ' · ✨稀有' : ''}${h.type === 'special' ? ' · 🌟特殊' : ''}${h.type === 'ssr' ? ' · 🎊SSR' : ''}</div>
+          <div class="archive-food">${h.food}</div>
+        </li>
+      `).join('')
+    : '<p style="text-align:center; color:var(--ink-light); padding:20px;">还没有记录，快去抽签吧~</p>';
+}
+
+function clearHistory() {
+  if (confirm('确定要清空所有历史记录吗？此操作不可恢复！')) {
+    PersistData.history = [];
+    PersistData.foodCounts = {};
+    PersistData.categoryCounts = {};
+    PersistData.consecutiveNoReroll = 0;
+    PersistData.ssrCount = 0;
+    saveAllMeta();
+    renderArchive();
+    renderHome();
+  }
+}
+
+// ==================== ACHIEVEMENTS ====================
+function renderAchievements() {
+  const grid = document.getElementById('achievement-grid');
+  grid.innerHTML = ACHIEVEMENTS.map(a => {
+    const unlocked = PersistData.achievements.includes(a.id);
+    return `
+      <div class="achievement-card ${unlocked ? 'unlocked' : 'locked'}">
+        <span class="ach-icon">${a.icon}</span>
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+        ${unlocked ? '<span class="ach-badge">🏆 已解锁</span>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function checkAchievements() {
+  const state = {
+    foodCounts: PersistData.foodCounts,
+    categoryCounts: PersistData.categoryCounts,
+    consecutiveNoReroll: PersistData.consecutiveNoReroll,
+    ssrCount: PersistData.ssrCount,
+  };
+
+  ACHIEVEMENTS.forEach(a => {
+    if (!PersistData.achievements.includes(a.id) && a.check(state)) {
+      PersistData.achievements.push(a.id);
+      // Brief notification
+      setTimeout(() => {
+        showAchievementUnlock(a);
+      }, 500);
+    }
+  });
+  saveAllMeta();
+}
+
+function showAchievementUnlock(achievement) {
+  // Simple alert for now - could be a nice modal
+  const div = document.createElement('div');
+  div.style.cssText = `
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #fff; padding: 16px 24px; border-radius: 20px;
+    font-family: var(--font-hand); font-size: 1.1rem;
+    z-index: 10000; box-shadow: 0 4px 20px rgba(255,170,0,0.5);
+    animation: modalIn 0.4s ease-out;
+  `;
+  div.innerHTML = `🏆 成就解锁：${achievement.name}<br><span style="font-size:0.8rem;">${achievement.desc}</span>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+// ==================== EDIT MODE ====================
+function renderEdit() {
+  const container = document.getElementById('edit-content');
+  const cats = PersistData.categories;
+
+  container.innerHTML = cats.map((cat, ci) => `
+    <div class="edit-section">
+      <h4>
+        ${cat.icon} ${cat.name}
+        <button class="top-btn" onclick="deleteCategory(${ci})" style="background:var(--accent);">删除</button>
+      </h4>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.8rem;">名称：</label>
+        <input value="${escapeHtml(cat.name)}" onchange="updateCatName(${ci}, this.value)" style="width:100%; padding:6px; border:1px solid var(--paper-dark); border-radius:4px; font-family:var(--font-body);" />
+        <label style="font-size:0.8rem;">图标：</label>
+        <input value="${cat.icon}" onchange="updateCatIcon(${ci}, this.value)" style="width:100%; padding:6px; border:1px solid var(--paper-dark); border-radius:4px;" />
+        <label style="font-size:0.8rem;">稀有概率 (0-1)：</label>
+        <input type="number" value="${cat.rareRate || 0}" step="0.01" min="0" max="1" onchange="updateCatRareRate(${ci}, parseFloat(this.value))" style="width:100%; padding:6px; border:1px solid var(--paper-dark); border-radius:4px;" />
+        ${cat.specialRate !== undefined ? `<label style="font-size:0.8rem;">特殊概率 (0-1)：</label><input type="number" value="${cat.specialRate || 0}" step="0.01" min="0" max="1" onchange="updateCatSpecialRate(${ci}, parseFloat(this.value))" style="width:100%; padding:6px; border:1px solid var(--paper-dark); border-radius:4px;" />` : ''}
+      </div>
+      ${renderMenuEdit(cat, ci, 'normal', '普通菜单')}
+      ${cat.menus.rare ? renderMenuEdit(cat, ci, 'rare', '稀有菜单 (5%)') : ''}
+      ${cat.menus.special ? renderMenuEdit(cat, ci, 'special', '特殊菜单 (5%)') : ''}
+      <div style="margin-top:8px;">
+        <button class="top-btn" onclick="addMenuType(${ci})" style="font-size:0.75rem;">+ 添加菜单类型</button>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="edit-section" style="text-align:center;">
+      <h4>新增分类</h4>
+      <div class="edit-add-form">
+        <input id="new-cat-name" placeholder="分类名称" />
+        <input id="new-cat-icon" placeholder="图标" style="width:60px;" />
+        <button onclick="addCategory()">新增</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderMenuEdit(cat, ci, type, label) {
+  const menus = cat.menus[type] || [];
+  return `
+    <div style="margin-bottom:8px;">
+      <strong style="font-size:0.85rem;">${label}：</strong>
+      <ul class="edit-menu-list">
+        ${menus.map((m, mi) => `
+          <li>
+            <span>${m}</span>
+            <div>
+              <button onclick="editMenuItem(${ci}, '${type}', ${mi})" title="编辑">✏️</button>
+              <button onclick="deleteMenuItem(${ci}, '${type}', ${mi})" title="删除">🗑️</button>
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+      <div class="edit-add-form">
+        <input id="add-input-${ci}-${type}" placeholder="新增菜单项" />
+        <button onclick="addMenuItem(${ci}, '${type}')">+ 添加</button>
+      </div>
+    </div>
+  `;
+}
+
+function updateCatName(ci, value) {
+  PersistData.categories[ci].name = value;
+  saveCategories();
+}
+
+function updateCatIcon(ci, value) {
+  PersistData.categories[ci].icon = value;
+  saveCategories();
+}
+
+function updateCatRareRate(ci, value) {
+  PersistData.categories[ci].rareRate = Math.max(0, Math.min(1, value || 0));
+  saveCategories();
+}
+
+function updateCatSpecialRate(ci, value) {
+  PersistData.categories[ci].specialRate = Math.max(0, Math.min(1, value || 0));
+  saveCategories();
+}
+
+function addMenuItem(ci, type) {
+  const input = document.getElementById('add-input-' + ci + '-' + type);
+  if (!input || !input.value.trim()) return;
+  if (!PersistData.categories[ci].menus[type]) PersistData.categories[ci].menus[type] = [];
+  PersistData.categories[ci].menus[type].push(input.value.trim());
+  input.value = '';
+  saveCategories();
+  renderEdit();
+}
+
+function deleteMenuItem(ci, type, mi) {
+  PersistData.categories[ci].menus[type].splice(mi, 1);
+  saveCategories();
+  renderEdit();
+}
+
+function editMenuItem(ci, type, mi) {
+  const newVal = prompt('编辑菜单项：', PersistData.categories[ci].menus[type][mi]);
+  if (newVal !== null && newVal.trim()) {
+    PersistData.categories[ci].menus[type][mi] = newVal.trim();
+    saveCategories();
+    renderEdit();
+  }
+}
+
+function addMenuType(ci) {
+  const typeName = prompt('新菜单类型名称（如 rare, special, breakfast）：');
+  if (typeName && typeName.trim()) {
+    PersistData.categories[ci].menus[typeName.trim()] = [];
+    saveCategories();
+    renderEdit();
+  }
+}
+
+function addCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  const icon = document.getElementById('new-cat-icon').value.trim() || '🍽️';
+  if (!name) return;
+  PersistData.categories.push({
+    id: 'custom_' + Date.now(),
+    name,
+    icon,
+    type: 'medicine_box',
+    menus: { normal: [] },
+    tips: [],
+    rareRate: 0,
+    specialRate: 0,
+  });
+  document.getElementById('new-cat-name').value = '';
+  document.getElementById('new-cat-icon').value = '';
+  saveCategories();
+  renderEdit();
+  renderHome();
+}
+
+function deleteCategory(ci) {
+  if (PersistData.categories.length <= 1) {
+    alert('至少保留一个分类！');
+    return;
+  }
+  if (confirm('确定删除分类 "' + PersistData.categories[ci].name + '" 吗？')) {
+    PersistData.categories.splice(ci, 1);
+    saveCategories();
+    renderEdit();
+    renderHome();
+  }
+}
+
+// ==================== MUSIC SYSTEM ====================
+let audioCtx = null;
+let musicGain = null;
+let musicOscillators = [];
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    musicGain = audioCtx.createGain();
+    musicGain.gain.value = PersistData.musicVol * 0.15; // quiet ambient
+    musicGain.connect(audioCtx.destination);
+  }
+}
+
+function startMusic() {
+  initAudio();
+  if (musicOscillators.length > 0) return;
+
+  // Simple pentatonic ambient using oscillators
+  const notes = [262, 330, 392, 440, 523, 660, 784]; // C pentatonic
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = 0.03 + Math.random() * 0.02;
+    osc.connect(gain);
+    gain.connect(musicGain);
+    osc.start();
+    musicOscillators.push({ osc, gain });
+    // Gentle random panning
+    setTimeout(() => {
+      osc.frequency.value = freq * (1 + Math.sin(Date.now() / 5000 + i) * 0.02);
+    }, 1000);
+  });
+
+  // Slow modulation
+  const modInterval = setInterval(() => {
+    if (musicOscillators.length === 0) { clearInterval(modInterval); return; }
+    musicOscillators.forEach((o, i) => {
+      o.osc.frequency.value = notes[i] * (1 + Math.sin(Date.now() / 3000 + i) * 0.03);
+    });
+  }, 2000);
+
+  PersistData.musicOn = true;
+  saveAllMeta();
+  updateMusicBtn();
+}
+
+function stopMusic() {
+  musicOscillators.forEach(o => {
+    try { o.osc.stop(); } catch (e) { /* already stopped */ }
+  });
+  musicOscillators = [];
+  PersistData.musicOn = false;
+  saveAllMeta();
+  updateMusicBtn();
+}
+
+function toggleMusic() {
+  if (PersistData.musicOn) {
+    stopMusic();
+  } else {
+    startMusic();
+  }
+}
+
+function updateMusicBtn() {
+  const btn = document.getElementById('btn-music');
+  if (btn) {
+    btn.textContent = PersistData.musicOn ? '🎵 音乐:开' : '🎵 音乐';
+    if (PersistData.musicOn) btn.classList.add('music-on');
+    else btn.classList.remove('music-on');
+  }
+}
+
+function setMusicVolume(vol) {
+  PersistData.musicVol = parseFloat(vol);
+  if (musicGain) musicGain.gain.value = PersistData.musicVol * 0.15;
+  saveAllMeta();
+}
+
+// ==================== FLOATING TEXTS ====================
+function startFloatingTexts() {
+  if (AppState.floatingTextTimer) return;
+  spawnFloatingText();
+  AppState.floatingTextTimer = setInterval(spawnFloatingText, 3000);
+}
+
+function spawnFloatingText() {
+  const text = FLOATING_TEXTS[Math.floor(Math.random() * FLOATING_TEXTS.length)];
+  const el = document.createElement('div');
+  el.className = 'floating-text';
+  el.textContent = text;
+  el.style.top = (5 + Math.random() * 80) + '%';
+  el.style.left = '-50px';
+  el.style.animationDuration = (5 + Math.random() * 5) + 's';
+  el.style.fontSize = (0.8 + Math.random() * 0.6) + 'rem';
+  document.getElementById('floating-layer').appendChild(el);
+
+  // Cleanup after animation
+  setTimeout(() => el.remove(), 7000);
+}
+
+// ==================== EASTER EGG ====================
+let titleClickTimer = null;
+
+function initTitleEasterEgg() {
+  const title = document.getElementById('main-title');
+  if (!title) return;
+
+  title.addEventListener('click', () => {
+    AppState.titleClickCount++;
+    if (titleClickTimer) clearTimeout(titleClickTimer);
+    titleClickTimer = setTimeout(() => { AppState.titleClickCount = 0; }, 2000);
+
+    if (AppState.titleClickCount >= 10) {
+      AppState.titleClickCount = 0;
+      if (titleClickTimer) clearTimeout(titleClickTimer);
+      alert('别点了！快去吃饭！！！');
+      // Auto trigger random draw
+      const randomCat = PersistData.categories[Math.floor(Math.random() * PersistData.categories.length)];
+      navigateTo('lottery-' + randomCat.id);
+    }
+  });
+}
+
+// ==================== UTILS ====================
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== INIT ====================
+function init() {
+  // Load persisted music state
+  if (PersistData.musicOn) {
+    // Don't auto-play due to browser restrictions — user must click
+    updateMusicBtn();
+  }
+
+  // Check daily power reset
+  const today = new Date().toLocaleDateString('zh-CN');
+  if (PersistData.dailyPowerDate !== today) {
+    AppState.dailyPowerUsed = false;
+  }
+
+  // Check oracle
+  if (PersistData.oracle && PersistData.oracleDate === today) {
+    AppState.oracleToday = PersistData.oracle;
+  }
+
+  // Render home
+  renderHome();
+  updateMusicBtn();
+  updateDailyPowerBtn();
+
+  // Start floating texts
+  startFloatingTexts();
+
+  // Easter egg
+  initTitleEasterEgg();
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+      }
+    });
+  });
+}
+
+// Run on DOM ready
+document.addEventListener('DOMContentLoaded', init);
+
+// Handle page visibility for floating texts
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (AppState.floatingTextTimer) {
+      clearInterval(AppState.floatingTextTimer);
+      AppState.floatingTextTimer = null;
+    }
+  } else {
+    startFloatingTexts();
+  }
+});
+
+console.log('🍜 《我说吃啥就吃啥 V2.0》已就绪！');
+console.log('   不准纠结，抽到啥吃啥！');
+</script>
+</body>
+</html>
